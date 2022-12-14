@@ -172,6 +172,7 @@ void Spline::calculateMainMatrix()
     }
     //mainMatrix = firstMatrix;
     std::transform(firstMatrix.begin(), firstMatrix.end(), secondMatrix.begin(), mainMatrix.begin(), std::plus<double>());
+    
     isMainMatrixCalculated = true;
 }
 
@@ -202,18 +203,6 @@ void Spline::calculateFirstMatrix()
         {
             firstMatrix[localMatrixMapping[j]] += localMatrix[j];
         }
-
-        for (size_t q = 0; q < globalMatrixRank; q++)
-        {
-            for (size_t z = 0; z < globalMatrixRank; z++)
-            {
-                std::cout.precision(4);
-                std::cout.width(6);
-                std::cout << firstMatrix[q * globalMatrixRank + z] << " ";
-            }
-            std::cout << "\n";
-        }
-        std::cout << "\n";
     }
 
     isFirstMatrixCalculated = true;
@@ -277,15 +266,6 @@ void Spline::calculateBVector()
         {
             b[localVectorMapping[j]] += localVector[j];
         }
-
-        for (size_t q = 0; q < globalMatrixRank; q++)
-        {
-            std::cout.precision(4);
-            std::cout.width(6);
-            std::cout << b[q] << "\n";
-        }
-        std::cout << "\n";
-
     }
     isBVectorCalculated = true;
 }
@@ -326,6 +306,47 @@ void Spline::solveProblem()
     calculateQVector();
 }
 
+double Spline::getSplineDerivative(double x, double y)
+{
+    int size = 16;
+    auto whichFE = [&]()
+    {
+        for (int i = 0; i < fes.size(); i++)
+        {
+            if (x >= fes[i].leftBottom().x - eps && x <= fes[i].rightBottom().x + eps &&
+                y >= fes[i].leftBottom().y - eps && y <= fes[i].leftTop().y + eps)
+            {
+                return i;
+            }
+        }
+        return -1;
+    };
+
+    int currentFE = whichFE();
+    if (currentFE == -1)
+    {
+        std::cerr << "trying to get spline solution from outside of area. Returning...\n";
+        return 0;
+    }
+    double gradx = 0;
+    double grady = 0;
+    double stepx = fes[currentFE].rightBottom().x - fes[currentFE].leftBottom().x,
+        stepy = fes[currentFE].leftTop().y - fes[currentFE].leftBottom().y,
+        xi = fes[currentFE].leftBottom().x,
+        yi = fes[currentFE].leftBottom().y;
+    std::vector<int> indices = getGlobalPositionVector(currentFE);
+    for (size_t i = 0; i < size; i++)
+    {
+        gradx += Hermit::derher1d((Hermit::mu(i + 1) - 1), x, xi, stepx) *
+            Hermit::her1d((Hermit::nu(i + 1) - 1), y, yi, stepy) * q[indices[i]];
+        grady += Hermit::derher1d((Hermit::nu(i + 1) - 1), y, yi, stepy) *
+            Hermit::her1d((Hermit::mu(i + 1) - 1), x, xi, stepx) * q[indices[i]];
+    }
+
+    return sqrt(gradx * gradx + grady * grady);
+
+}
+
 double Spline::getSplineSolution(double x, double y)
 {
     int size = 16;
@@ -352,8 +373,8 @@ double Spline::getSplineSolution(double x, double y)
     double value = 0;
     double stepx = fes[currentFE].rightBottom().x - fes[currentFE].leftBottom().x,
         stepy = fes[currentFE].leftTop().y - fes[currentFE].leftBottom().y,
-        xi = fes[currentFE].rightBottom().x,
-        yi = fes[currentFE].leftTop().y;
+        xi = fes[currentFE].leftBottom().x,
+        yi = fes[currentFE].leftBottom().y;
     std::vector<int> indices = getGlobalPositionVector(currentFE);
     for (size_t i = 0; i < size; i++)
     {
@@ -420,8 +441,8 @@ std::vector<double> Spline::getLocalFirstMatrix(int currentFE)
     std::vector<int> indices;
     double stepx = fes[currentFE].rightBottom().x - fes[currentFE].leftBottom().x,
         stepy = fes[currentFE].leftTop().y - fes[currentFE].leftBottom().y,
-        xi = fes[currentFE].rightBottom().x,
-        yi = fes[currentFE].leftTop().y;
+        xi = fes[currentFE].leftBottom().x,
+        yi = fes[currentFE].leftBottom().y;
     for (size_t i = 0; i < x.size(); i++)
     {
         bool betweenX = x[i] >= fes[currentFE].leftBottom().x - eps && x[i] <= fes[currentFE].rightBottom().x + eps;
@@ -507,8 +528,8 @@ std::vector<double> Spline::getLocalB(int currentFE)
     std::vector<int> indices;
     double stepx = fes[currentFE].rightBottom().x - fes[currentFE].leftBottom().x,
         stepy = fes[currentFE].leftTop().y - fes[currentFE].leftBottom().y,
-        xi = fes[currentFE].rightBottom().x,
-        yi = fes[currentFE].leftTop().y;
+        xi = fes[currentFE].leftBottom().x,
+        yi = fes[currentFE].leftBottom().y;
     for (size_t i = 0; i < x.size(); i++)
     {
         bool betweenX = x[i] >= fes[currentFE].leftBottom().x - eps && x[i] <= fes[currentFE].rightBottom().x + eps;

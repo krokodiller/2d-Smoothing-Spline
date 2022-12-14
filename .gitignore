@@ -1,0 +1,22 @@
+
+*.ipch
+*.db-shm
+.vs/2d Smoothing Spline/v17/.suo
+*.db
+*.db-wal
+*.opendb
+*.aps
+*.rc
+*.txt
+*.tlog
+*.enc
+*.obj
+*.exe
+*.pdb
+*.log
+*.ipdb
+*.idb
+*.ilk
+*.recipe
+*.iobj
+*.h

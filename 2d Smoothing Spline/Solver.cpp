@@ -1,7 +1,7 @@
 #include "Solver.h"
 #include <iostream>
 
-constexpr double eps = 0.00001;
+constexpr double eps = 1e-20;
 
 std::vector<double> Solver::gauss(std::vector<double> matrix, std::vector<double> vector)
 {
@@ -69,3 +69,4 @@ std::vector<double> Solver::gauss(std::vector<double> matrix, std::vector<double
 
     return vectorCopy;
 }
+

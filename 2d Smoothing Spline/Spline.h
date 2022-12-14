@@ -31,6 +31,8 @@ public:
     void solveProblem();
 
     double getSplineSolution(double x, double y);
+
+    double getSplineDerivative(double x, double y);
     
     //format: x y value
     void printSolutionToFile(std::string name, double precision);

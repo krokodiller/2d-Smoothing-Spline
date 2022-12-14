@@ -1,7 +1,6 @@
 #include "Hermit.h"
 #include <iostream>
 
-
 int Hermit::mu(int i)
 {
     return 2 * (((i - 1) / 4) % 2) + ((i - 1) % 2) + 1;
@@ -29,6 +28,29 @@ double Hermit::her1d(int n, double x, double xi, double step)
         std::cerr << "incorrect xi n(1d).\n";
         return 0;
     }
+}
+
+double Hermit::derher1d(int n, double x, double xi, double step)
+{
+    double k = (x - xi) / step;
+    switch (n)
+    {
+    case 0:
+        return (-6.0 * k + 6.0 * k * k) / step;
+        break;
+    case 1:
+        return (1.0 - 4.0 * k + 3.0 * k * k);
+        break;
+    case 2:
+        return (6.0 * k - 6.0 * k * k) / step;
+        break;
+    case 3:
+        return (-2.0 * k + 3.0 * k * k);
+        break;
+    default:
+        std::cerr << "incorrect xi n(1d).\n";
+        return 0;
+    };
 }
 
 double Hermit::her2d(int n, double x, double xi, double stepx, double y, double yi, double stepy)
